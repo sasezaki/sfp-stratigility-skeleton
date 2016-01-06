@@ -3,13 +3,13 @@ use Backbeard\Dispatcher;
 
 return (new Zend\ServiceManager\ServiceManager)
 ->setService('Config', include 'parameters.php')
-->setFactory('application', function($sm){
-    return function ($req, $res, $next) use ($sm) {
-        $routingFactory = $sm->get('routing-factory');
-        $view =$sm->get('view');
-        $stringRouter =$sm->get('string-router');
+->setFactory('application', function($container){
+    return function ($req, $res, $next) use ($container) {
+        $routingFactory = $container->get('routing-factory');
+        $view =$container->get('view');
+        $stringRouter =$container->get('string-router');
 
-        $dispatcher = new Dispatcher($routingFactory($sm), $view, $stringRouter);
+        $dispatcher = new Dispatcher($routingFactory($container), $view, $stringRouter);
         $dispatchResult = $dispatcher->dispatch($req, $res);
         if ($dispatchResult->isDispatched() !== false) {
             return $dispatchResult->getResponse();
@@ -17,38 +17,38 @@ return (new Zend\ServiceManager\ServiceManager)
         return $next($req, $res);
     };
 })
-->setFactory('routing-factory', function($sm){
-    return function ($sm) {
-        yield from $sm->get('module-foo');
-        yield from $sm->get('module-bar');
+->setFactory('routing-factory', function($container){
+    return function (Interop\Container\ContainerInterface $container) {
+        yield from $container->get('module-foo');
+        yield from $container->get('module-bar');
     };
 })
-->setFactory('module-foo', function($sm){
+->setFactory('module-foo', function($container){
     return (function() {
         yield '/foo' => function () {
             return 'hoge';
         };
     })();
 })
-->setFactory('module-bar', function($sm){
-    $module = function() use ($sm) {
-        yield '/' => [$sm->get('HelloController'), 'helloAction'];
+->setFactory('module-bar', function($container){
+    $module = function() use ($container) {
+        yield '/' => [$container->get('HelloController'), 'helloAction'];
     };
 
     return $module();
 })
 
-->setFactory('HelloController', function($sm) {
+->setFactory('HelloController', function($container) {
     return new Application\HelloController();           
 })
 
-->setFactory('view', function($sm){
+->setFactory('view', function($container){
     return new Backbeard\View\Templating\SfpStreamView(new SfpStreamView\View(getcwd().'/views'));
 })
-->setFactory('string-router', function($sm){
+->setFactory('string-router', function($container){
     return new Backbeard\Router\StringRouter(new \FastRoute\RouteParser\Std());
 })
-->setFactory('ErrorHandler', function($sm){
-    $displayErrors = ($sm->get('Config')['env'] !== 'production');
+->setFactory('ErrorHandler', function($container){
+    $displayErrors = ($container->get('Config')['env'] !== 'production');
     return new Application\ErrorHandler('views', $displayErrors);
 });
