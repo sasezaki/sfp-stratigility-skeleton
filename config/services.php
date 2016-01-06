@@ -19,13 +19,31 @@ return (new Zend\ServiceManager\ServiceManager)
 })
 ->setFactory('routing-factory', function($sm){
     return function ($sm) {
-        yield '/' => function () {
-            return 'hello';
-        };
+        yield from $sm->get('module-foo');
+        yield from $sm->get('module-bar');
     };
 })
+->setFactory('module-foo', function($sm){
+    return (function() {
+        yield '/foo' => function () {
+            return 'hoge';
+        };
+    })();
+})
+->setFactory('module-bar', function($sm){
+    $module = function() use ($sm) {
+        yield '/' => [$sm->get('HelloController'), 'helloAction'];
+    };
+
+    return $module();
+})
+
+->setFactory('HelloController', function($sm) {
+    return new Application\HelloController();           
+})
+
 ->setFactory('view', function($sm){
-    return new Backbeard\View\SfpStreamView(new SfpStreamView\View(getcwd().'/views'));
+    return new Backbeard\View\Templating\SfpStreamView(new SfpStreamView\View(getcwd().'/views'));
 })
 ->setFactory('string-router', function($sm){
     return new Backbeard\Router\StringRouter(new \FastRoute\RouteParser\Std());

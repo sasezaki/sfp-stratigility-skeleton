@@ -3,7 +3,7 @@
     "description": "application skeleton for stratigility",
     "license": "BSD-3-Clause",
     "require": {
-        "sasezaki/backbeard": "^0.6.0",
+        "sasezaki/backbeard": "^0.7.0",
         "zendframework/zend-stratigility": "~1.0",
         "zendframework/zend-servicemanager": "~2.6",
         "zendframework/zend-diactoros": "^1.1"
