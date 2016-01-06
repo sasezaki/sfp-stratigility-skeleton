@@ -9,7 +9,7 @@ return (new Zend\ServiceManager\ServiceManager)
         $view =$sm->get('view');
         $stringRouter =$sm->get('string-router');
 
-        $dispatcher = new Dispatcher($routingFactory($sm), $view, $stringRouter);
+        $dispatcher = new Dispatcher($routingFactory->run($req), $view, $stringRouter);
         $dispatchResult = $dispatcher->dispatch($req, $res);
         if ($dispatchResult->isDispatched() !== false) {
             return $dispatchResult->getResponse();
@@ -18,9 +18,26 @@ return (new Zend\ServiceManager\ServiceManager)
     };
 })
 ->setFactory('routing-factory', function($sm){
-    return function ($sm) {
-        yield from $sm->get('module-foo');
-        yield from $sm->get('module-bar');
+    return new class($sm) {
+        private $container;
+        public function __construct(Interop\Container\ContainerInterface $container) 
+        {
+            $this->container = $container;
+        }
+
+        public function run(Psr\Http\Message\ServerRequestInterface $req)
+        {
+            if (stripos($req->getUri()->getPath(), '/bar') === 0) {
+                goto bar;
+            }
+
+            foo:
+            yield from $this->container->get('module-foo');
+
+            bar:
+            yield from $this->container->get('module-bar');
+        }
+
     };
 })
 ->setFactory('module-foo', function($sm){
